@@ -108,7 +108,8 @@ CREATE TABLE ride_statuses
     app_sent_at   DATETIME(6)                                                                NULL COMMENT 'ユーザーへの状態通知日時',
     chair_sent_at DATETIME(6)                                                                NULL COMMENT '椅子への状態通知日時',
     PRIMARY KEY (id),
-    INDEX (ride_id)
+    INDEX (ride_id, chair_sent_at, created_at ASC),
+    INDEX (ride_id, app_sent_at, created_at ASC)
 )
     COMMENT = 'ライドステータスの変更履歴テーブル';
 
