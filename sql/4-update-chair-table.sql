@@ -5,7 +5,7 @@ ALTER TABLE chairs
 ALTER TABLE chairs
     ADD COLUMN total_distance_updated_at DATETIME(6) NULL COMMENT '移動距離更新日時';
 
-CREATE TRIGGER IF NOT EXISTS update_chair_total_distance
+CREATE TRIGGER update_chair_total_distance
     BEFORE INSERT
     ON chair_locations
     FOR EACH ROW
