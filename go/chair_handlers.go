@@ -148,8 +148,6 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 					writeError(w, http.StatusInternalServerError, err)
 					return
 				}
-				yetChairSentRideStatusCache.Forget(ride.ID)
-				latestRideStatusCache.Forget(ride.ID)
 			}
 
 			if req.Latitude == ride.DestinationLatitude && req.Longitude == ride.DestinationLongitude && status == "CARRYING" {
@@ -157,8 +155,6 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 					writeError(w, http.StatusInternalServerError, err)
 					return
 				}
-				yetChairSentRideStatusCache.Forget(ride.ID)
-				latestRideStatusCache.Forget(ride.ID)
 			}
 		}
 	}
@@ -167,6 +163,9 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	yetChairSentRideStatusCache.Forget(ride.ID)
+	latestRideStatusCache.Forget(ride.ID)
 
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
 		RecordedAt: location.CreatedAt.UnixMilli(),
@@ -327,8 +326,6 @@ func chairPostRideStatus(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
-		yetChairSentRideStatusCache.Forget(ride.ID)
-		latestRideStatusCache.Forget(ride.ID)
 	// After Picking up user
 	case "CARRYING":
 		status, err := getLatestRideStatus(ctx, tx, ride.ID)
@@ -344,8 +341,6 @@ func chairPostRideStatus(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
-		yetChairSentRideStatusCache.Forget(ride.ID)
-		latestRideStatusCache.Forget(ride.ID)
 	default:
 		writeError(w, http.StatusBadRequest, errors.New("invalid status"))
 	}
@@ -354,6 +349,8 @@ func chairPostRideStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	yetChairSentRideStatusCache.Forget(ride.ID)
+	latestRideStatusCache.Forget(ride.ID)
 
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -8,13 +8,8 @@ import (
 	"time"
 )
 
-type DBTX interface {
-	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-}
-
 var chairCache, _ = sc.New(func(ctx context.Context, chairID string) (Chair, error) {
-	tx, ok := ctx.Value("tx").(DBTX)
+	tx, ok := ctx.Value("tx").(executableGet)
 	if !ok {
 		tx = db
 	}
@@ -28,7 +23,7 @@ var chairCache, _ = sc.New(func(ctx context.Context, chairID string) (Chair, err
 }, 1*time.Minute, 5*time.Minute)
 
 var chairFromAccessTokenCache, _ = sc.New(func(ctx context.Context, accessToken string) (Chair, error) {
-	tx, ok := ctx.Value("tx").(DBTX)
+	tx, ok := ctx.Value("tx").(executableGet)
 	if !ok {
 		tx = db
 	}
@@ -42,7 +37,7 @@ var chairFromAccessTokenCache, _ = sc.New(func(ctx context.Context, accessToken 
 }, 1*time.Minute, 5*time.Minute)
 
 var latestRideStatusCache, _ = sc.New(func(ctx context.Context, rideID string) (string, error) {
-	tx, ok := ctx.Value("tx").(DBTX)
+	tx, ok := ctx.Value("tx").(executableGet)
 	if !ok {
 		tx = db
 	}
@@ -55,7 +50,7 @@ var latestRideStatusCache, _ = sc.New(func(ctx context.Context, rideID string) (
 }, 1*time.Minute, 5*time.Minute)
 
 var yetChairSentRideStatusCache, _ = sc.New(func(ctx context.Context, rideID string) (RideStatus, error) {
-	tx, ok := ctx.Value("tx").(DBTX)
+	tx, ok := ctx.Value("tx").(executableGet)
 	if !ok {
 		tx = db
 	}
