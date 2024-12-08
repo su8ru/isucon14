@@ -430,6 +430,9 @@ func appPostRides(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	yetChairSentRideStatusCache.Forget(ride.ID)
+	latestRideStatusCache.Forget(ride.ID)
+
 	writeJSON(w, http.StatusAccepted, &appPostRidesResponse{
 		RideID: rideID,
 		Fare:   fare,
@@ -622,6 +625,9 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	yetChairSentRideStatusCache.Forget(ride.ID)
+	latestRideStatusCache.Forget(ride.ID)
 
 	writeJSON(w, http.StatusOK, &appPostRideEvaluationResponse{
 		CompletedAt: ride.UpdatedAt.UnixMilli(),
