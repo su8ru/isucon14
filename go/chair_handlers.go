@@ -193,6 +193,7 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 
 	yetChairSentRideStatusCache.Forget(ride.ID)
 	latestRideStatusCache.Forget(ride.ID)
+	latestRideStatusCache.Notify(ctx, ride.ID)
 
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
 		RecordedAt: dateTime.UnixMilli(),
