@@ -132,6 +132,11 @@ type postInitializeResponse struct {
 }
 
 func postInitialize(w http.ResponseWriter, r *http.Request) {
+	chairCache.Purge()
+	chairFromAccessTokenCache.Purge()
+	latestRideStatusCache.Purge()
+	yetChairSentRideStatusCache.Purge()
+	
 	ctx := r.Context()
 	req := &postInitializeRequest{}
 	if err := bindJSON(r, req); err != nil {
