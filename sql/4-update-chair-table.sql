@@ -1,3 +1,5 @@
+USE isuride;
+
 ALTER TABLE chairs
     ADD COLUMN total_distance INTEGER NOT NULL DEFAULT 0 COMMENT '移動距離';
 ALTER TABLE chairs
