@@ -65,8 +65,7 @@ func chairAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		accessToken := c.Value
-		chair := &Chair{}
-		err = db.GetContext(ctx, chair, "SELECT * FROM chairs WHERE access_token = ?", accessToken)
+		chair, err := chairFromAccessTokenCache.Get(ctx, accessToken)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				writeError(w, http.StatusUnauthorized, errors.New("invalid access token"))
@@ -76,7 +75,7 @@ func chairAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx = context.WithValue(ctx, "chair", chair)
+		ctx = context.WithValue(ctx, "chair", &chair)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
