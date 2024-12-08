@@ -148,7 +148,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 
 	var locations []ChairLocation
 
-	err := db.GetContext(ctx, &locations, "SELECT * FROM chair_locations ORDER BY created_at")
+	err := db.SelectContext(ctx, &locations, "SELECT * FROM chair_locations ORDER BY created_at")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
