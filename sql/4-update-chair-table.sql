@@ -20,7 +20,7 @@ BEGIN
     IF distance > 0 THEN
         UPDATE chairs
         SET total_distance           = chairs.total_distance + distance,
-            total_distance_updated_at = CURRENT_TIMESTAMP(6)
+            total_distance_updated_at = NEW.created_at
         WHERE id = NEW.chair_id;
     END IF;
 END;
