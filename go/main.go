@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -206,6 +207,11 @@ func writeJSON(w http.ResponseWriter, statusCode int, v interface{}) {
 	w.Write(buf)
 }
 
+type Discord struct {
+	Content string `json:"content"`
+	Flags   int    `json:"flags"`
+}
+
 func writeError(w http.ResponseWriter, statusCode int, err error) {
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	w.WriteHeader(statusCode)
@@ -218,6 +224,20 @@ func writeError(w http.ResponseWriter, statusCode int, err error) {
 	w.Write(buf)
 
 	slog.Error("error response wrote", err)
+
+	discord := &Discord{
+		Content: fmt.Sprintf("Application Error!\n```\n%s\n```", err.Error()),
+		Flags:   1 << 12,
+	}
+	discordJson, _ := json.Marshal(discord)
+
+	webhookUrl := "https://discord.com/api/webhooks/1315196658312548402/GCPmlHl49QrQzAAlD88uM8WVV2VqxLoIeeqY7lSj-mF8hUWy5zyCGLsmOE9oEsYQi3C0"
+	res, _ := http.Post(
+		webhookUrl,
+		"application/json",
+		bytes.NewBuffer(discordJson),
+	)
+	defer res.Body.Close()
 }
 
 func secureRandomStr(b int) string {
