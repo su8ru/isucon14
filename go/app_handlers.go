@@ -767,7 +767,7 @@ func getChairStats(ctx context.Context, tx *sqlx.Tx, chairID string) (appGetNoti
 	err := tx.SelectContext(
 		ctx,
 		&rides,
-		`SELECT * FROM rides INNER JOIN ride_statuses on rides.id = ride_statuses.ride_id WHERE chair_id = ? AND ride_statuses.status = 'COMPLETED'`,
+		`SELECT rides.* FROM rides INNER JOIN ride_statuses on rides.id = ride_statuses.ride_id WHERE chair_id = ? AND ride_statuses.status = 'COMPLETED'`,
 		chairID,
 	)
 	if err != nil {
