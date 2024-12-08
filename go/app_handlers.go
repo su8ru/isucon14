@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -281,6 +282,35 @@ type appPostRidesResponse struct {
 type executableGet interface {
 	Get(dest interface{}, query string, args ...interface{}) error
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+}
+
+func getLatestRideStatusFromCache(ctx context.Context, tx executableGet, rideID string) (string, error) {
+	status := ""
+	if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, rideID); err != nil {
+		return "", fmt.Errorf("failed to get latest ride status: %w", err)
+	}
+
+	ctx = context.WithValue(ctx, "tx", tx)
+	cached, err := latestRideStatusCache.Get(ctx, rideID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get cache: %w", err)
+	}
+
+	if cached != status {
+		var data []RideStatus
+		if err := tx.SelectContext(ctx, &data, `SELECT * FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC`, rideID); err != nil {
+			return "", fmt.Errorf("failed to get latest ride status: %w", err)
+		}
+
+		fmt.Println(data, cached, status)
+
+		panic(fmt.Errorf("cache mismatch: %s != %s", cached, status))
+
+		return status, fmt.Errorf("cache mismatch: %s != %s", cached, status)
+	}
+
+	return status, nil
 }
 
 func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (string, error) {
@@ -437,6 +467,7 @@ func appPostRides(w http.ResponseWriter, r *http.Request) {
 
 	yetChairSentRideStatusCache.Forget(rideID)
 	latestRideStatusCache.Forget(rideID)
+	latestRideStatusCache.Notify(ctx, ride.ID)
 
 	writeJSON(w, http.StatusAccepted, &appPostRidesResponse{
 		RideID: rideID,
@@ -633,6 +664,7 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 
 	yetChairSentRideStatusCache.Forget(rideID)
 	latestRideStatusCache.Forget(rideID)
+	latestRideStatusCache.Notify(ctx, ride.ID)
 
 	writeJSON(w, http.StatusOK, &appPostRideEvaluationResponse{
 		CompletedAt: ride.UpdatedAt.UnixMilli(),
@@ -694,7 +726,7 @@ func appGetNotification(w http.ResponseWriter, r *http.Request) {
 	status := ""
 	if err := tx.GetContext(ctx, &yetSentRideStatus, `SELECT * FROM ride_statuses WHERE ride_id = ? AND app_sent_at IS NULL ORDER BY created_at ASC LIMIT 1`, ride.ID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			status, err = getLatestRideStatus(ctx, tx, ride.ID)
+			status, err = getLatestRideStatusFromCache(ctx, tx, ride.ID)
 			if err != nil {
 				writeError(w, http.StatusInternalServerError, err)
 				return

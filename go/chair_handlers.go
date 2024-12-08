@@ -193,6 +193,7 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 
 	yetChairSentRideStatusCache.Forget(ride.ID)
 	latestRideStatusCache.Forget(ride.ID)
+	latestRideStatusCache.Notify(ctx, ride.ID)
 
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
 		RecordedAt: dateTime.UnixMilli(),
@@ -251,7 +252,7 @@ func chairGetNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if yetSentRideStatus.ID == "" {
-		status, err = getLatestRideStatus(ctx, tx, ride.ID)
+		status, err = getLatestRideStatusFromCache(ctx, tx, ride.ID)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 		}
@@ -370,6 +371,7 @@ func chairPostRideStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+
 	yetChairSentRideStatusCache.Forget(ride.ID)
 	latestRideStatusCache.Forget(ride.ID)
 
