@@ -213,7 +213,7 @@ func appGetRides(w http.ResponseWriter, r *http.Request) {
 
 	items := []getAppRidesResponseItem{}
 	for _, ride := range rides {
-		status, err := getLatestRideStatus(ctx, tx, ride.ID)
+		status, err := getLatestRideStatusFromCache(ctx, tx, ride.ID)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 			return
@@ -285,7 +285,7 @@ type executableGet interface {
 	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 }
 
-func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (string, error) {
+func getLatestRideStatusFromCache(ctx context.Context, tx executableGet, rideID string) (string, error) {
 	status := ""
 	if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, rideID); err != nil {
 		return "", fmt.Errorf("failed to get latest ride status: %w", err)
@@ -309,6 +309,17 @@ func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (
 	}
 
 	return status, nil
+}
+
+func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (string, error) {
+	ctx = context.WithValue(ctx, "tx", tx)
+
+	status := ""
+	if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, rideID); err != nil {
+		return "", err
+	}
+	return status, nil
+	// return latestRideStatusCache.Get(ctx, rideID)
 }
 
 func appPostRides(w http.ResponseWriter, r *http.Request) {
@@ -711,7 +722,7 @@ func appGetNotification(w http.ResponseWriter, r *http.Request) {
 	status := ""
 	if err := tx.GetContext(ctx, &yetSentRideStatus, `SELECT * FROM ride_statuses WHERE ride_id = ? AND app_sent_at IS NULL ORDER BY created_at ASC LIMIT 1`, ride.ID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			status, err = getLatestRideStatus(ctx, tx, ride.ID)
+			status, err = getLatestRideStatusFromCache(ctx, tx, ride.ID)
 			if err != nil {
 				writeError(w, http.StatusInternalServerError, err)
 				return
@@ -900,7 +911,7 @@ func appGetNearbyChairs(w http.ResponseWriter, r *http.Request) {
 		skip := false
 		for _, ride := range rides {
 			// 過去にライドが存在し、かつ、それが完了していない場合はスキップ
-			status, err := getLatestRideStatus(ctx, tx, ride.ID)
+			status, err := getLatestRideStatusFromCache(ctx, tx, ride.ID)
 			if err != nil {
 				writeError(w, http.StatusInternalServerError, err)
 				return

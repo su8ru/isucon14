@@ -251,7 +251,7 @@ func chairGetNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if yetSentRideStatus.ID == "" {
-		status, err = getLatestRideStatus(ctx, tx, ride.ID)
+		status, err = getLatestRideStatusFromCache(ctx, tx, ride.ID)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 		}
