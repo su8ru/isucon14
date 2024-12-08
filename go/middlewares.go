@@ -75,7 +75,7 @@ func chairAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx = context.WithValue(ctx, "chair", chair)
+		ctx = context.WithValue(ctx, "chair", &chair)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
