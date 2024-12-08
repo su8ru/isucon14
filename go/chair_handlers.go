@@ -86,7 +86,6 @@ func chairPostActivity(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	chairCache.Forget(chair.ID)
 
 	w.WriteHeader(http.StatusNoContent)
 }
