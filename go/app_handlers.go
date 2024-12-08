@@ -659,12 +659,12 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	yetChairSentRideStatusCache.Forget(rideID)
+	latestRideStatusCache.Forget(rideID)
+
 	writeJSON(w, http.StatusOK, &appPostRideEvaluationResponse{
 		CompletedAt: ride.UpdatedAt.UnixMilli(),
 	})
-
-	yetChairSentRideStatusCache.Forget(rideID)
-	latestRideStatusCache.Forget(rideID)
 }
 
 type appGetNotificationResponse struct {
