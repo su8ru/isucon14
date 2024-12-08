@@ -219,16 +219,16 @@ func chairGetNotification(w http.ResponseWriter, r *http.Request) {
 
 	yetSentRideStatus, err := yetChairSentRideStatusCache.Get(ctx, ride.ID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			status, err = getLatestRideStatus(ctx, tx, ride.ID)
-			if err != nil {
-				writeError(w, http.StatusInternalServerError, err)
-				return
-			}
-		} else {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if yetSentRideStatus.ID == "" {
+		status, err = getLatestRideStatus(ctx, tx, ride.ID)
+		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
-			return
 		}
+		return
 	} else {
 		status = yetSentRideStatus.Status
 	}
