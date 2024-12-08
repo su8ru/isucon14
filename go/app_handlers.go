@@ -717,7 +717,7 @@ func appGetNotification(w http.ResponseWriter, r *http.Request) {
 	if status == "MATCHING" || status == "COMPLETED" {
 		retryAfterMs = matchingInterval
 	} else {
-		retryAfterMs = 20
+		retryAfterMs = matchingInterval
 	}
 
 	response := &appGetNotificationResponse{
