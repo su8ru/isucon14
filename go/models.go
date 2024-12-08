@@ -16,6 +16,7 @@ type Chair struct {
 	UpdatedAt              time.Time    `db:"updated_at"`
 	TotalDistance          int          `db:"total_distance"`
 	TotalDistanceUpdatedAt sql.NullTime `db:"total_distance_updated_at"`
+	IsFree                 bool         `db:"is_free"`
 }
 
 type ChairModel struct {
@@ -58,6 +59,10 @@ type Ride struct {
 	DestinationLatitude  int            `db:"destination_latitude"`
 	DestinationLongitude int            `db:"destination_longitude"`
 	Evaluation           *int           `db:"evaluation"`
+	MatchedAt            *time.Time     `db:"matched_at"`
+	ArrivedFirstAt       *time.Time     `db:"arrived_first_at"`
+	PickedUpAt           *time.Time     `db:"picked_up_at"`
+	ArrivedAt            *time.Time     `db:"arrived_at"`
 	CreatedAt            time.Time      `db:"created_at"`
 	UpdatedAt            time.Time      `db:"updated_at"`
 }
