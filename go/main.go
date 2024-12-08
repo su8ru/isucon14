@@ -30,7 +30,7 @@ func main() {
 	http.ListenAndServe(":8080", mux)
 }
 
-const retryAfter = 100
+const retryAfter = 30
 
 func setup() http.Handler {
 	host := os.Getenv("ISUCON_DB_HOST")
