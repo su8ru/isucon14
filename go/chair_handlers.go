@@ -252,13 +252,13 @@ func chairGetNotification(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
-		yetChairSentRideStatusCache.Forget(ride.ID)
 	}
 
 	if err := tx.Commit(); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	yetChairSentRideStatusCache.Forget(ride.ID)
 
 	writeJSON(w, http.StatusOK, &chairGetNotificationResponse{
 		Data: &chairGetNotificationResponseData{

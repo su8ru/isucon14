@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -694,6 +695,14 @@ func appGetNotification(w http.ResponseWriter, r *http.Request) {
 	} else {
 		status = yetSentRideStatus.Status
 	}
+
+	rec := ""
+	if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, ride.ID); err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	slog.Info("appGetNotification", slog.String("status", status), slog.Any("ride", ride), slog.Any("yetSentRideStatus", yetSentRideStatus), slog.String("fromSQL", rec))
 
 	fare, err := calculateDiscountedFare(ctx, tx, user.ID, ride, ride.PickupLatitude, ride.PickupLongitude, ride.DestinationLatitude, ride.DestinationLongitude)
 	if err != nil {
