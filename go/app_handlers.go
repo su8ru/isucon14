@@ -282,6 +282,7 @@ type appPostRidesResponse struct {
 type executableGet interface {
 	Get(dest interface{}, query string, args ...interface{}) error
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 }
 
 func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (string, error) {
@@ -298,7 +299,7 @@ func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (
 
 	if cached != status {
 		var data []RideStatus
-		if err := tx.GetContext(ctx, &data, `SELECT * FROM ride_statuses WHERE ride_id = ? ORDER BY created_at`, rideID); err != nil {
+		if err := tx.SelectContext(ctx, &data, `SELECT * FROM ride_statuses WHERE ride_id = ? ORDER BY created_at`, rideID); err != nil {
 			return "", fmt.Errorf("failed to get latest ride status: %w", err)
 		}
 
