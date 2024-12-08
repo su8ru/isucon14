@@ -299,7 +299,7 @@ func getLatestRideStatusFromCache(ctx context.Context, tx executableGet, rideID 
 
 	if cached != status {
 		var data []RideStatus
-		if err := tx.SelectContext(ctx, &data, `SELECT * FROM ride_statuses WHERE ride_id = ? ORDER BY created_at`, rideID); err != nil {
+		if err := tx.SelectContext(ctx, &data, `SELECT * FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC`, rideID); err != nil {
 			return "", fmt.Errorf("failed to get latest ride status: %w", err)
 		}
 
