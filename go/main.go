@@ -66,11 +66,14 @@ func setup() http.Handler {
 	dbConfig.Net = "tcp"
 	dbConfig.DBName = dbname
 	dbConfig.ParseTime = true
+	dbConfig.InterpolateParams = true
 
 	_db, err := sqlx.Connect("mysql", dbConfig.FormatDSN())
 	if err != nil {
 		panic(err)
 	}
+	_db.SetMaxIdleConns(64)
+	_db.SetMaxOpenConns(64)
 	db = _db
 
 	mux := chi.NewRouter()
