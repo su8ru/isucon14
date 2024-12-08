@@ -287,12 +287,12 @@ type executableGet interface {
 func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (string, error) {
 	ctx = context.WithValue(ctx, "tx", tx)
 
-	status := ""
-	if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, rideID); err != nil {
-		return "", err
-	}
-	return status, nil
-	// return latestRideStatusCache.Get(ctx, rideID)
+	//status := ""
+	//if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, rideID); err != nil {
+	//	return "", err
+	//}
+	//return status, nil
+	return latestRideStatusCache.Get(ctx, rideID)
 }
 
 func appPostRides(w http.ResponseWriter, r *http.Request) {
@@ -436,8 +436,8 @@ func appPostRides(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	yetChairSentRideStatusCache.Forget(ride.ID)
-	latestRideStatusCache.Forget(ride.ID)
+	yetChairSentRideStatusCache.Forget(rideID)
+	latestRideStatusCache.Forget(rideID)
 
 	writeJSON(w, http.StatusAccepted, &appPostRidesResponse{
 		RideID: rideID,
@@ -632,8 +632,8 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	yetChairSentRideStatusCache.Forget(ride.ID)
-	latestRideStatusCache.Forget(ride.ID)
+	yetChairSentRideStatusCache.Forget(rideID)
+	latestRideStatusCache.Forget(rideID)
 
 	writeJSON(w, http.StatusOK, &appPostRideEvaluationResponse{
 		CompletedAt: ride.UpdatedAt.UnixMilli(),
