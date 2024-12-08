@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -143,6 +144,43 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	if _, err := db.ExecContext(ctx, "UPDATE settings SET value = ? WHERE name = 'payment_gateway_url'", req.PaymentServer); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	var locations []ChairLocation
+
+	err := db.GetContext(ctx, &locations, "SELECT * FROM chair_locations ORDER BY created_at")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	var locationByChairId = make(map[string][]ChairLocation)
+	for _, location := range locations {
+		if _, ok := locationByChairId[location.ChairID]; !ok {
+			locationByChairId[location.ChairID] = []ChairLocation{}
+		}
+		locationByChairId[location.ChairID] = append(locationByChairId[location.ChairID], location)
+	}
+
+	total_distance := make(map[string]int)
+	total_distance_updated_at := make(map[string]time.Time)
+
+	for chair_id, ls := range locationByChairId {
+		for i, l := range ls {
+			total_distance_updated_at[chair_id] = l.CreatedAt
+			if i == 0 {
+				continue
+			}
+			total_distance[chair_id] += abs(l.Latitude-ls[i-1].Latitude) + abs(l.Longitude-ls[i-1].Longitude)
+		}
+	}
+
+	for chair_id, distance := range total_distance {
+		_, err := db.ExecContext(ctx, "UPDATE chairs SET total_distance = ?, total_distance_updated_at = ? WHERE id = ?", distance, total_distance_updated_at[chair_id], chair_id)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
 	}
 
 	writeJSON(w, http.StatusOK, postInitializeResponse{Language: "go"})
