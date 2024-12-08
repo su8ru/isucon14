@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/oklog/ulid/v2"
@@ -232,6 +233,12 @@ func chairGetNotification(w http.ResponseWriter, r *http.Request) {
 	} else {
 		status = yetSentRideStatus.Status
 	}
+	s, err := latestRideStatusCache.Get(ctx, ride.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	slog.Info("chairGetNotification", slog.String("status", status), slog.Any("ride", ride), slog.Any("yetSentRideStatus", yetSentRideStatus), slog.String("latest", s))
 
 	user := &User{}
 	err = tx.GetContext(ctx, user, "SELECT * FROM users WHERE id = ? FOR SHARE", ride.UserID)
