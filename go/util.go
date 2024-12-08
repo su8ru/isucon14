@@ -7,6 +7,6 @@ import (
 )
 
 func updateRideStatus(tx *sqlx.Tx, ctx context.Context, id string, rideId string, status string) error {
-	_, err := tx.ExecContext(ctx, "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)", ulid.Make().String(), rideId, "PICKUP")
+	_, err := tx.ExecContext(ctx, "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)", ulid.Make().String(), rideId, status)
 	return err
 }
