@@ -305,6 +305,8 @@ func getLatestRideStatusFromCache(ctx context.Context, tx executableGet, rideID 
 
 		fmt.Println(data, cached, status)
 
+		panic(fmt.Errorf("cache mismatch: %s != %s", cached, status))
+
 		return status, fmt.Errorf("cache mismatch: %s != %s", cached, status)
 	}
 
