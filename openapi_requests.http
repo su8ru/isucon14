@@ -1,0 +1,67 @@
+###
+POST http://localhost:8080/api/initialize
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/app/users
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/app/payment-methods
+Content-Type: application/json
+
+###
+GET http://localhost:8080/api/app/rides
+
+###
+POST http://localhost:8080/api/app/rides
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/app/rides/estimated-fare
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/app/rides/{{ride_id}}/evaluation
+Content-Type: application/json
+
+###
+GET http://localhost:8080/api/app/notification
+
+###
+GET http://localhost:8080/api/app/nearby-chairs
+
+###
+POST http://localhost:8080/api/owner/owners
+Content-Type: application/json
+
+###
+GET http://localhost:8080/api/owner/sales
+
+###
+GET http://localhost:8080/api/owner/chairs
+Cookie: owner_session=001d0876c1197819935c6f2e32eb03209c2a874ee6e6463fadffc9d6b14c1ef6
+
+<> 2024-12-08T130437.401.json
+
+###
+POST http://localhost:8080/api/chair/chairs
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/chair/activity
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/chair/coordinate
+Content-Type: application/json
+
+###
+GET http://localhost:8080/api/chair/notification
+
+###
+POST http://localhost:8080/api/chair/rides/{{ride_id}}/status
+Content-Type: application/json
+
+###
+GET http://localhost:8080/api/internal/matching
