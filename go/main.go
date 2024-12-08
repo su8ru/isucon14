@@ -2,7 +2,7 @@ package main
 
 import (
 	crand "crypto/rand"
-	"encoding/json"
+	json1 "encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-json-experiment/json"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
@@ -26,7 +27,7 @@ func main() {
 	http.ListenAndServe(":8080", mux)
 }
 
-const matchingInterval = 300
+const matchingInterval = 250
 
 func setup() http.Handler {
 	host := os.Getenv("ISUCON_DB_HOST")
@@ -131,7 +132,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	chairFromAccessTokenCache.Purge()
 	latestRideStatusCache.Purge()
 	yetChairSentRideStatusCache.Purge()
-	
+
 	ctx := r.Context()
 	req := &postInitializeRequest{}
 	if err := bindJSON(r, req); err != nil {
@@ -195,7 +196,7 @@ type Coordinate struct {
 }
 
 func bindJSON(r *http.Request, v interface{}) error {
-	return json.NewDecoder(r.Body).Decode(v)
+	return json1.NewDecoder(r.Body).Decode(v)
 }
 
 func writeJSON(w http.ResponseWriter, statusCode int, v interface{}) {

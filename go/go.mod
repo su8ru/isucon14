@@ -11,5 +11,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/go-json-experiment/json v0.0.0-20241208081943-bc21dd91e076 // indirect
 	github.com/motoki317/sc v1.8.1 // indirect
 )
