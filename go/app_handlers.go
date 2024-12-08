@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -288,10 +289,19 @@ func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (
 
 	status := ""
 	if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, rideID); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get latest ride status: %w", err)
 	}
+
+	cached, err := latestRideStatusCache.Get(ctx, rideID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get cache: %w", err)
+	}
+
+	if cached != status {
+		return status, fmt.Errorf("cache mismatch: %s != %s", cached, status)
+	}
+
 	return status, nil
-	// return latestRideStatusCache.Get(ctx, rideID)
 }
 
 func appPostRides(w http.ResponseWriter, r *http.Request) {
