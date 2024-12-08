@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -86,6 +87,7 @@ func chairPostActivity(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	chairCache.Forget(chair.ID)
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -161,6 +163,9 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	yetChairSentRideStatusCache.Forget(ride.ID)
+	latestRideStatusCache.Forget(ride.ID)
+
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
 		RecordedAt: location.CreatedAt.UnixMilli(),
 	})
@@ -194,8 +199,10 @@ func chairGetNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+
+	ctx = context.WithValue(ctx, "tx", tx)
+
 	ride := &Ride{}
-	yetSentRideStatus := RideStatus{}
 	status := ""
 
 	if err := tx.GetContext(ctx, ride, `SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1`, chair.ID); err != nil {
@@ -209,17 +216,18 @@ func chairGetNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := tx.GetContext(ctx, &yetSentRideStatus, `SELECT * FROM ride_statuses WHERE ride_id = ? AND chair_sent_at IS NULL ORDER BY created_at ASC LIMIT 1`, ride.ID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			status, err = getLatestRideStatus(ctx, tx, ride.ID)
-			if err != nil {
-				writeError(w, http.StatusInternalServerError, err)
-				return
-			}
-		} else {
+	yetSentRideStatus, err := yetChairSentRideStatusCache.Get(ctx, ride.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if yetSentRideStatus.ID == "" {
+		status, err = getLatestRideStatus(ctx, tx, ride.ID)
+		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
-			return
 		}
+		return
 	} else {
 		status = yetSentRideStatus.Status
 	}
@@ -243,6 +251,7 @@ func chairGetNotification(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	yetChairSentRideStatusCache.Forget(ride.ID)
 
 	writeJSON(w, http.StatusOK, &chairGetNotificationResponse{
 		Data: &chairGetNotificationResponseData{
@@ -333,6 +342,8 @@ func chairPostRideStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	yetChairSentRideStatusCache.Forget(ride.ID)
+	latestRideStatusCache.Forget(ride.ID)
 
 	w.WriteHeader(http.StatusNoContent)
 }

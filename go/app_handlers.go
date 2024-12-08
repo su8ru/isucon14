@@ -284,11 +284,14 @@ type executableGet interface {
 }
 
 func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (string, error) {
+	ctx = context.WithValue(ctx, "tx", tx)
+
 	status := ""
 	if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, rideID); err != nil {
 		return "", err
 	}
 	return status, nil
+	// return latestRideStatusCache.Get(ctx, rideID)
 }
 
 func appPostRides(w http.ResponseWriter, r *http.Request) {
@@ -431,6 +434,9 @@ func appPostRides(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	yetChairSentRideStatusCache.Forget(rideID)
+	latestRideStatusCache.Forget(rideID)
 
 	writeJSON(w, http.StatusAccepted, &appPostRidesResponse{
 		RideID: rideID,
@@ -625,6 +631,9 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	yetChairSentRideStatusCache.Forget(rideID)
+	latestRideStatusCache.Forget(rideID)
+
 	writeJSON(w, http.StatusOK, &appPostRideEvaluationResponse{
 		CompletedAt: ride.UpdatedAt.UnixMilli(),
 	})
@@ -767,7 +776,7 @@ func getChairStats(ctx context.Context, tx *sqlx.Tx, chairID string) (appGetNoti
 	err := tx.SelectContext(
 		ctx,
 		&rides,
-		`SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC`,
+		`SELECT rides.* FROM rides INNER JOIN ride_statuses on rides.id = ride_statuses.ride_id WHERE chair_id = ? AND ride_statuses.status = 'COMPLETED'`,
 		chairID,
 	)
 	if err != nil {
@@ -777,36 +786,6 @@ func getChairStats(ctx context.Context, tx *sqlx.Tx, chairID string) (appGetNoti
 	totalRideCount := 0
 	totalEvaluation := 0.0
 	for _, ride := range rides {
-		rideStatuses := []RideStatus{}
-		err = tx.SelectContext(
-			ctx,
-			&rideStatuses,
-			`SELECT * FROM ride_statuses WHERE ride_id = ? ORDER BY created_at`,
-			ride.ID,
-		)
-		if err != nil {
-			return stats, err
-		}
-
-		var arrivedAt, pickupedAt *time.Time
-		var isCompleted bool
-		for _, status := range rideStatuses {
-			if status.Status == "ARRIVED" {
-				arrivedAt = &status.CreatedAt
-			} else if status.Status == "CARRYING" {
-				pickupedAt = &status.CreatedAt
-			}
-			if status.Status == "COMPLETED" {
-				isCompleted = true
-			}
-		}
-		if arrivedAt == nil || pickupedAt == nil {
-			continue
-		}
-		if !isCompleted {
-			continue
-		}
-
 		totalRideCount++
 		totalEvaluation += float64(*ride.Evaluation)
 	}
