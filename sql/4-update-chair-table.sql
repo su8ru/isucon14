@@ -10,17 +10,14 @@ CREATE TRIGGER IF NOT EXISTS update_chair_total_distance
 BEGIN
     DECLARE distance INTEGER;
 
-    SELECT ABS(NEW.latitude - latitude) + ABS(NEW.longitude - longitude)
-    INTO distance
-    FROM chair_locations
-    WHERE chair_id = NEW.chair_id
-    ORDER BY created_at DESC
-    LIMIT 1;
+    SET distance = (SELECT ABS(NEW.latitude - latitude) + ABS(NEW.longitude - longitude)
+                    FROM chair_locations
+                    WHERE chair_id = NEW.chair_id
+                    ORDER BY created_at DESC
+                    LIMIT 1);
 
-    IF distance > 0 THEN
-        UPDATE chairs
-        SET total_distance           = chairs.total_distance + distance,
-            total_distance_updated_at = NEW.created_at
-        WHERE id = NEW.chair_id;
-    END IF;
+    UPDATE chairs
+    SET total_distance            = IFNULL(chairs.total_distance + distance, 0),
+        total_distance_updated_at = NEW.created_at
+    WHERE id = NEW.chair_id;
 END;
