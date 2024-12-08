@@ -47,7 +47,7 @@ var latestRideStatusCache, _ = sc.New(func(ctx context.Context, rideID string) (
 		return "", err
 	}
 	return status, nil
-}, 0, 0, sc.EnableStrictCoalescing())
+}, 1*time.Minute, 5*time.Minute)
 
 var yetChairSentRideStatusCache, _ = sc.New(func(ctx context.Context, rideID string) (RideStatus, error) {
 	tx, ok := ctx.Value("tx").(executableGet)

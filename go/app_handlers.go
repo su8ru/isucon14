@@ -285,19 +285,25 @@ type executableGet interface {
 }
 
 func getLatestRideStatus(ctx context.Context, tx executableGet, rideID string) (string, error) {
-	ctx = context.WithValue(ctx, "tx", tx)
-
 	status := ""
 	if err := tx.GetContext(ctx, &status, `SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1`, rideID); err != nil {
 		return "", fmt.Errorf("failed to get latest ride status: %w", err)
 	}
 
+	ctx = context.WithValue(ctx, "tx", tx)
 	cached, err := latestRideStatusCache.Get(ctx, rideID)
 	if err != nil {
 		return "", fmt.Errorf("failed to get cache: %w", err)
 	}
 
 	if cached != status {
+		var data []RideStatus
+		if err := tx.GetContext(ctx, &data, `SELECT * FROM ride_statuses WHERE ride_id = ? ORDER BY created_at`, rideID); err != nil {
+			return "", fmt.Errorf("failed to get latest ride status: %w", err)
+		}
+
+		fmt.Println(data, cached, status)
+
 		return status, fmt.Errorf("cache mismatch: %s != %s", cached, status)
 	}
 
@@ -641,12 +647,12 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	yetChairSentRideStatusCache.Forget(rideID)
-	latestRideStatusCache.Forget(rideID)
-
 	writeJSON(w, http.StatusOK, &appPostRideEvaluationResponse{
 		CompletedAt: ride.UpdatedAt.UnixMilli(),
 	})
+
+	yetChairSentRideStatusCache.Forget(rideID)
+	latestRideStatusCache.Forget(rideID)
 }
 
 type appGetNotificationResponse struct {
